@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "querybridge"
+version = "0.1.0"
+description = "A read-only SQLite MCP server for AI-assisted data exploration."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "mcp>=1.9,<2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "pytest-asyncio>=0.24",
+    "ruff>=0.8",
+]
+
+[project.scripts]
+querybridge = "querybridge.server:main"
+
+[tool.setuptools.packages.find]
+include = ["querybridge*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
