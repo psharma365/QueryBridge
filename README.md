@@ -9,6 +9,7 @@ QueryBridge is the foundation for a secure natural-language data assistant. This
 - Execute one read-only SQL query and return at most 100 rows by default.
 - Enforce read-only access twice: SQLite opens the database in read-only mode, and an SQLite authorizer rejects non-query operations.
 - Stop long-running queries after a configurable server-side timeout (default: 2 seconds).
+- Bound SQLite query complexity and reject serialized results larger than 1 MB; binary values are returned as Base64.
 - Expose the capabilities as MCP tools over stdio.
 
 ## Requirements
@@ -65,6 +66,9 @@ Configure your MCP client to launch the command in the project environment. For 
 | `list_tables` | List accessible tables and views. |
 | `describe_table` | Return column names, declared types, and primary-key metadata. |
 | `query_read_only` | Run a read-only SQL query with a bounded result count. |
+
+Query results include column names, returned rows, a row count, and a `truncated`
+flag so an agent can tell when it received only part of the result set.
 
 ## Safety scope
 

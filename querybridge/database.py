@@ -8,6 +8,7 @@ import math
 import os
 import sqlite3
 import time
+from contextlib import closing
 from pathlib import Path
 from typing import Any
 
@@ -94,7 +95,7 @@ class SQLiteDatabase:
 
     def list_tables(self) -> list[dict[str, str]]:
         """Return user tables and views without exposing SQLite internals."""
-        with self._connect() as connection:
+        with closing(self._connect()) as connection:
             rows = connection.execute(
                 """
                 SELECT name, type
@@ -110,7 +111,7 @@ class SQLiteDatabase:
         if not table_name.strip():
             raise QueryValidationError("table_name must not be empty")
 
-        with self._connect() as connection:
+        with closing(self._connect()) as connection:
             exists = connection.execute(
                 """
                 SELECT 1 FROM sqlite_schema
@@ -154,7 +155,7 @@ class SQLiteDatabase:
 
         started_at = time.monotonic()
         deadline = started_at + self.query_timeout_seconds
-        with self._connect() as connection:
+        with closing(self._connect()) as connection:
             connection.set_progress_handler(lambda: time.monotonic() > deadline, 1000)
             try:
                 cursor = connection.execute(sql)
