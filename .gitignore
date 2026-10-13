@@ -5,6 +5,7 @@ __pycache__/
 .coverage
 htmlcov/
 .pytest-tmp/
+data/*.db
 dist/
 build/
 *.egg-info/

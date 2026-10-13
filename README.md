@@ -26,6 +26,31 @@ py -m venv .venv
 python -m pip install -e ".[dev]"
 ```
 
+## Local demo with synthetic data
+
+Generate a small, deterministic SQLite database containing fictional customers
+and orders. The generated database is ignored by Git:
+
+```powershell
+querybridge-sample
+```
+
+The generator refuses to replace an existing file unless you opt in with
+`querybridge-sample --force`. Then run the demo MCP client, which starts the
+server over stdio, discovers and calls its tools, and prints the schema and a
+regional sales query:
+
+```powershell
+querybridge-demo
+```
+
+The demo uses `data/querybridge-sample.db` by default. Set
+`QUERYBRIDGE_DATABASE_PATH` or provide `--database` to use another SQLite file:
+
+```powershell
+querybridge-demo --database C:\path\to\your-read-only-sample.db
+```
+
 Set the path to an existing database:
 
 ```powershell

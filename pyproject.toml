@@ -21,6 +21,8 @@ dev = [
 
 [project.scripts]
 querybridge = "querybridge.server:main"
+querybridge-demo = "querybridge.demo:main"
+querybridge-sample = "querybridge.sample_data:main"
 
 [tool.setuptools.packages.find]
 include = ["querybridge*"]
