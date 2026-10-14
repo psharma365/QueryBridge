@@ -73,7 +73,7 @@ async def answer_question(
     result = await _call_tool(
         session,
         "query_read_only",
-        {"sql": plan.sql},
+        {"sql": plan.sql, "allowed_tables": list(schema)},
     )
     return QueryAnswer(sql=plan.sql, result=result)
 

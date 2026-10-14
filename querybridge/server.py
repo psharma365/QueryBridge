@@ -22,9 +22,17 @@ def describe_table(table_name: str) -> dict[str, object]:
 
 
 @mcp.tool()
-def query_read_only(sql: str, max_rows: int = 100) -> dict[str, object]:
+def query_read_only(
+    sql: str,
+    max_rows: int = 100,
+    allowed_tables: list[str] | None = None,
+) -> dict[str, object]:
     """Run one read-only SELECT query and return a bounded result set."""
-    return configured_database().query_read_only(sql, max_rows=max_rows)
+    return configured_database().query_read_only(
+        sql,
+        max_rows=max_rows,
+        allowed_tables=allowed_tables,
+    )
 
 
 def main() -> None:

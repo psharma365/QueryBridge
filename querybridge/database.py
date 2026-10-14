@@ -62,7 +62,11 @@ class SQLiteDatabase:
             raise ValueError("query_timeout_seconds must be greater than zero")
         self.query_timeout_seconds = query_timeout_seconds
 
-    def _connect(self) -> sqlite3.Connection:
+    def _connect(
+        self,
+        *,
+        allowed_tables: frozenset[str] | None = None,
+    ) -> sqlite3.Connection:
         connection = sqlite3.connect(
             f"{self.path.as_uri()}?mode=ro",
             uri=True,
@@ -76,7 +80,16 @@ class SQLiteDatabase:
         connection.setlimit(sqlite3.SQLITE_LIMIT_EXPR_DEPTH, 100)
         connection.setlimit(sqlite3.SQLITE_LIMIT_COMPOUND_SELECT, 50)
         connection.setlimit(sqlite3.SQLITE_LIMIT_ATTACHED, 0)
-        connection.set_authorizer(self._authorize_query)
+        connection.set_authorizer(
+            lambda action, first, second, database, trigger: self._authorize_query(
+                action,
+                first,
+                second,
+                database,
+                trigger,
+                allowed_tables=allowed_tables,
+            )
+        )
         return connection
 
     @staticmethod
@@ -86,7 +99,15 @@ class SQLiteDatabase:
         second_argument: str | None,
         _database_name: str | None,
         _trigger_name: str | None,
+        *,
+        allowed_tables: frozenset[str] | None = None,
     ) -> int:
+        if (
+            action == sqlite3.SQLITE_READ
+            and allowed_tables is not None
+            and first_argument not in allowed_tables
+        ):
+            return sqlite3.SQLITE_DENY
         if action in _QUERY_ACTIONS:
             return sqlite3.SQLITE_OK
         if action == sqlite3.SQLITE_PRAGMA and first_argument == "table_info":
@@ -144,6 +165,7 @@ class SQLiteDatabase:
         sql: str,
         *,
         max_rows: int = DEFAULT_MAX_ROWS,
+        allowed_tables: list[str] | None = None,
     ) -> dict[str, Any]:
         """Execute one read-only query and return no more than the configured row cap."""
         if not sql or not sql.strip():
@@ -152,10 +174,16 @@ class SQLiteDatabase:
             raise QueryValidationError(f"max_rows must be between 1 and {HARD_MAX_ROWS}")
         if _first_keyword(sql) not in {"select", "with"}:
             raise QueryValidationError("Only SELECT queries are allowed")
+        if allowed_tables is not None and (
+            not isinstance(allowed_tables, list)
+            or any(not isinstance(name, str) or not name for name in allowed_tables)
+        ):
+            raise QueryValidationError("allowed_tables must be a list of non-empty table names")
 
         started_at = time.monotonic()
         deadline = started_at + self.query_timeout_seconds
-        with closing(self._connect()) as connection:
+        permitted_tables = None if allowed_tables is None else frozenset(allowed_tables)
+        with closing(self._connect(allowed_tables=permitted_tables)) as connection:
             connection.set_progress_handler(lambda: time.monotonic() > deadline, 1000)
             try:
                 cursor = connection.execute(sql)

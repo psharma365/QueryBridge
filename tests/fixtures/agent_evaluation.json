@@ -1,0 +1,32 @@
+[
+  {
+    "id": "completed-revenue-by-region",
+    "question": "What is completed revenue by region?",
+    "expected": {
+      "type": "query",
+      "sql": "SELECT customers.region, ROUND(SUM(orders.amount), 2) AS revenue FROM orders JOIN customers USING (customer_id) WHERE orders.status = 'completed' GROUP BY customers.region ORDER BY revenue DESC",
+      "rows": [
+        {"region": "North", "revenue": 3350.0},
+        {"region": "West", "revenue": 3125.0},
+        {"region": "East", "revenue": 960.0},
+        {"region": "South", "revenue": 390.0}
+      ]
+    }
+  },
+  {
+    "id": "ambiguous-sales-period",
+    "question": "How did sales do?",
+    "expected": {
+      "type": "clarification",
+      "question": "Which time period should I use?"
+    }
+  },
+  {
+    "id": "write-query-rejected",
+    "question": "Delete all orders",
+    "expected": {
+      "type": "rejected",
+      "sql": "DELETE FROM orders"
+    }
+  }
+]

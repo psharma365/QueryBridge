@@ -124,6 +124,37 @@ def test_enforces_maximum_row_limit(database_path):
         database.query_read_only("SELECT * FROM orders", max_rows=501)
 
 
+def test_query_can_restrict_reads_to_allowed_tables(database_path):
+    database = SQLiteDatabase(database_path)
+
+    result = database.query_read_only(
+        "SELECT amount FROM orders",
+        allowed_tables=["orders"],
+    )
+
+    assert result["row_count"] == 3
+
+
+def test_query_rejects_reads_outside_allowed_tables(database_path):
+    database = SQLiteDatabase(database_path)
+    with sqlite3.connect(database_path) as connection:
+        connection.execute("CREATE TABLE private_notes (note TEXT)")
+        connection.execute("INSERT INTO private_notes VALUES ('not available')")
+
+    with pytest.raises(QueryValidationError, match="prohibited"):
+        database.query_read_only(
+            "SELECT note FROM private_notes",
+            allowed_tables=["orders"],
+        )
+
+
+def test_query_rejects_invalid_allowed_table_values(database_path):
+    database = SQLiteDatabase(database_path)
+
+    with pytest.raises(QueryValidationError, match="allowed_tables"):
+        database.query_read_only("SELECT 1", allowed_tables=["orders", ""])
+
+
 def test_query_rejects_malformed_sql(database_path):
     database = SQLiteDatabase(database_path)
 

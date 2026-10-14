@@ -57,3 +57,4 @@ async def test_mcp_server_discovers_tools_and_executes_read_query(tmp_path):
         )
         assert answer.sql == "SELECT SUM(amount) AS total FROM orders"
         assert answer.result["rows"] == [{"total": 12.5}]
+        assert answer.result["row_count"] == 1

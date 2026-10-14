@@ -88,6 +88,7 @@ async def test_answer_question_uses_schema_and_read_only_query_tool():
         "describe_table",
         "query_read_only",
     ]
+    assert session.calls[-1][1]["allowed_tables"] == ["orders"]
 
 
 @pytest.mark.asyncio
@@ -114,6 +115,21 @@ async def test_answer_question_rejects_empty_question_without_calling_tools():
         await answer_question(session, planner, "  ")
 
     assert session.calls == []
+
+
+@pytest.mark.asyncio
+async def test_answer_question_rejects_malformed_planner_output():
+    session = FakeSession(
+        {
+            "list_tables": ToolResponse({"result": []}),
+        }
+    )
+    planner = FixedPlanner(None)
+
+    with pytest.raises(RuntimeError, match="invalid query plan"):
+        await answer_question(session, planner, "How many orders are there?")
+
+    assert [name for name, _ in session.calls] == ["list_tables"]
 
 
 @pytest.mark.asyncio

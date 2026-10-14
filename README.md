@@ -95,6 +95,10 @@ Configure your MCP client to launch the command in the project environment. For 
 
 Query results include column names, returned rows, a row count, and a `truncated`
 flag so an agent can tell when it received only part of the result set.
+The `query_read_only` tool accepts an optional `allowed_tables` list; the agent
+boundary supplies the names it discovered before planning. This limits a
+planner-generated query but is not user authentication or a per-user access
+control mechanism.
 
 ## Agent boundary and data flow
 
@@ -102,8 +106,10 @@ flag so an agent can tell when it received only part of the result set.
 function for MCP clients. A planner receives the user's question and table
 schema, then returns a SQL plan or asks for clarification. QueryBridge sends a
 plan only to `query_read_only`; the server remains responsible for enforcing
-read-only access and result limits. The orchestration returns the SQL and
-bounded result as evidence rather than asking a model to invent a summary.
+read-only access and result limits. The agent also passes the inspected table
+names as an allowlist, which the SQLite authorizer applies during query
+execution. The orchestration returns the SQL and bounded result as evidence
+rather than asking a model to invent a summary.
 
 There is no model provider configured by default, and the tests use a
 deterministic planner fixture. If a hosted planner is added later, its provider
@@ -121,7 +127,22 @@ server-side read-only authorizer and query bounds remain essential. The query
 timeout and row cap are safeguards, not a substitute for OS-level resource
 isolation. Do not point it at sensitive data or expose it to untrusted clients.
 
-The next milestones can add a natural-language agent, an evaluation set, and cloud deployment after the MCP data-access layer is tested.
+The project remains local-only; adding a real model provider or cloud deployment
+requires separate design and cost decisions.
+
+## Deterministic agent evaluation
+
+`tests/fixtures/agent_evaluation.json` contains versioned planner fixtures for a
+correct aggregate query, an ambiguous question, and an unsafe write attempt.
+Run them against the generated synthetic database and actual MCP stdio server:
+
+```powershell
+python -m pytest tests/test_evaluation.py
+```
+
+The checks separately assert result correctness, clarification behavior, and
+write rejection. These fixtures measure regression behavior for a deterministic
+planner; they are not an accuracy benchmark for an LLM.
 
 ## Development
 
