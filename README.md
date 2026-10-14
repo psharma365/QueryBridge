@@ -1,6 +1,6 @@
 # QueryBridge
 
-QueryBridge is the foundation for a secure natural-language data assistant. This first milestone provides an MCP server that lets an MCP-compatible AI client inspect a SQLite database and run bounded, read-only queries. The natural-language agent is a separate planned component; this server does not call an LLM.
+QueryBridge is a provider-neutral foundation for a natural-language data assistant. Its MCP server lets an MCP client inspect a SQLite database and run bounded, read-only queries. The project includes an agent orchestration boundary, but no LLM provider or hosted model integration.
 
 ## Current features
 
@@ -11,6 +11,7 @@ QueryBridge is the foundation for a secure natural-language data assistant. This
 - Stop long-running queries after a configurable server-side timeout (default: 2 seconds).
 - Bound SQLite query complexity and reject serialized results larger than 1 MB; binary values are returned as Base64.
 - Expose the capabilities as MCP tools over stdio.
+- Provide a provider interface that plans queries from a question and schema, with execution delegated to the read-only MCP tool.
 
 ## Requirements
 
@@ -95,9 +96,30 @@ Configure your MCP client to launch the command in the project environment. For 
 Query results include column names, returned rows, a row count, and a `truncated`
 flag so an agent can tell when it received only part of the result set.
 
+## Agent boundary and data flow
+
+`querybridge.agent` defines a `QueryPlanner` interface and an orchestration
+function for MCP clients. A planner receives the user's question and table
+schema, then returns a SQL plan or asks for clarification. QueryBridge sends a
+plan only to `query_read_only`; the server remains responsible for enforcing
+read-only access and result limits. The orchestration returns the SQL and
+bounded result as evidence rather than asking a model to invent a summary.
+
+There is no model provider configured by default, and the tests use a
+deterministic planner fixture. If a hosted planner is added later, its provider
+will receive the user's question and database schema. This flow does not send
+query results or database rows to the planner. Treat questions and schema as
+potentially sensitive before configuring any external provider; provider-side
+logging and retention will depend on that provider.
+
 ## Safety scope
 
-This milestone is deliberately limited to local SQLite. It does not yet implement the LLM agent, user authentication, per-user authorization, cloud deployment, or a complete SQL cost/resource budget. The query timeout and row cap are safeguards, not a substitute for OS-level resource isolation. Do not point it at sensitive data or expose it to untrusted clients.
+This project is deliberately limited to local SQLite and has no concrete LLM
+provider, user authentication, per-user authorization, cloud deployment, or
+complete SQL cost/resource budget. A planner's SQL is untrusted input; the
+server-side read-only authorizer and query bounds remain essential. The query
+timeout and row cap are safeguards, not a substitute for OS-level resource
+isolation. Do not point it at sensitive data or expose it to untrusted clients.
 
 The next milestones can add a natural-language agent, an evaluation set, and cloud deployment after the MCP data-access layer is tested.
 

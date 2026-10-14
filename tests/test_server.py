@@ -8,6 +8,15 @@ import pytest
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
+from querybridge.agent import QueryPlan, answer_question
+
+
+class DeterministicPlanner:
+    async def plan(self, question, schema):
+        assert question == "What is the total order amount?"
+        assert "orders" in schema
+        return QueryPlan("SELECT SUM(amount) AS total FROM orders")
+
 
 @pytest.mark.asyncio
 async def test_mcp_server_discovers_tools_and_executes_read_query(tmp_path):
@@ -40,3 +49,11 @@ async def test_mcp_server_discovers_tools_and_executes_read_query(tmp_path):
         )
         assert result.isError is False
         assert "12.5" in str(result.content)
+
+        answer = await answer_question(
+            session,
+            DeterministicPlanner(),
+            "What is the total order amount?",
+        )
+        assert answer.sql == "SELECT SUM(amount) AS total FROM orders"
+        assert answer.result["rows"] == [{"total": 12.5}]
