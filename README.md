@@ -12,6 +12,7 @@ QueryBridge is a provider-neutral foundation for a natural-language data assista
 - Bound SQLite query complexity and reject serialized results larger than 1 MB; binary values are returned as Base64.
 - Expose the capabilities as MCP tools over stdio.
 - Provide a provider interface that plans queries from a question and schema, with execution delegated to the read-only MCP tool.
+- Optionally use a locally running Ollama model as the query planner.
 
 ## Requirements
 
@@ -117,6 +118,34 @@ will receive the user's question and database schema. This flow does not send
 query results or database rows to the planner. Treat questions and schema as
 potentially sensitive before configuring any external provider; provider-side
 logging and retention will depend on that provider.
+
+## Optional local Ollama planner
+
+QueryBridge can use Ollama's local chat API without adding a Python provider
+dependency. This option requires Ollama and a model installed locally; neither
+is downloaded or started automatically. For example, after installing Ollama
+and pulling a model that supports structured JSON output:
+
+```powershell
+ollama pull qwen2.5:3b
+$env:QUERYBRIDGE_OLLAMA_MODEL = "qwen2.5:3b"
+querybridge-ask "What is completed revenue by region?"
+```
+
+The command uses `data/querybridge-sample.db` by default. Create it first with
+`querybridge-sample`, or pass `--database` to use another file. Override the
+Ollama API host with `QUERYBRIDGE_OLLAMA_HOST` or `--ollama-host`; the default
+is `http://localhost:11434`. If you choose a remote host, the user's question
+and database schema will be sent to it. Query results are not sent to the model.
+The model's SQL is still subject to the read-only SQLite authorizer, discovered
+table allowlist, timeout, and result limits.
+
+Model memory, speed, and hardware requirements depend on the chosen model and
+quantization; consult the selected model's Ollama library page for its download
+size and requirements. Small quantized models can run on CPU, though generation
+may be slower than on supported GPU hardware. The small example is a starting
+point, not a guarantee for every machine. No model/API calls are required for
+tests or for using the MCP server without `querybridge-ask`.
 
 ## Safety scope
 

@@ -21,6 +21,7 @@ dev = [
 
 [project.scripts]
 querybridge = "querybridge.server:main"
+querybridge-ask = "querybridge.ask:main"
 querybridge-demo = "querybridge.demo:main"
 querybridge-sample = "querybridge.sample_data:main"
 
