@@ -173,6 +173,13 @@ The checks separately assert result correctness, clarification behavior, and
 write rejection. These fixtures measure regression behavior for a deterministic
 planner; they are not an accuracy benchmark for an LLM.
 
+`tests/test_prompt_injection.py` also sends adversarial text in the question
+and a schema column name through a mocked local-planner response to the real
+MCP server. It verifies that the planner receives JSON data, database row
+contents are not included in planner context, and a generated write is rejected
+without changing the database. This tests the enforcement boundary, not the
+ability of a language model to resist prompt injection.
+
 ## Development
 
 ```powershell
